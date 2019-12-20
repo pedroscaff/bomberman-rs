@@ -3,13 +3,47 @@ use amethyst::{
     core::transform::Transform,
     input::{get_key, is_close_requested, is_key_down, VirtualKeyCode},
     prelude::*,
+    ecs::prelude::{Component, DenseVecStorage},
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
     window::ScreenDimensions,
 };
 
 use log::info;
 
-pub struct MyState;
+use crate::config::read_map;
+
+pub const ARENA_HEIGHT: f32 = 160.0;
+pub const ARENA_WIDTH: f32 = 160.0;
+
+#[derive(Clone, Copy, Debug)]
+pub enum TileStatus {
+    FREE,
+    DESTROYED,
+    WALL,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Tile {
+    pub status: TileStatus,
+}
+
+pub struct Player;
+
+impl Component for Player {
+    type Storage = DenseVecStorage<Self>;
+}
+
+pub struct MyState {
+    map: [[Tile; 10]; 10],
+}
+
+impl Default for MyState {
+    fn default() -> Self {
+        MyState {
+            map: [[Tile { status: TileStatus::FREE }; 10]; 10],
+        }
+    }
+}
 
 impl SimpleState for MyState {
     // On start will run when this state is initialized. For more
@@ -17,6 +51,8 @@ impl SimpleState for MyState {
     // https://book.amethyst.rs/stable/concepts/state.html#life-cycle
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+
+        self.map = read_map("resources/maps/default.txt").unwrap();
 
         // Get the screen dimensions so we can initialize the camera and
         // place our sprites correctly later. We'll clone this since we'll
@@ -28,7 +64,8 @@ impl SimpleState for MyState {
 
         // Load our sprites and display them
         let sprites = load_sprites(world);
-        init_sprites(world, &sprites, &dimensions);
+        init_sprites(world, &self.map, &sprites, &dimensions);
+        init_players(world, &sprites);
     }
 
     fn handle_event(
@@ -61,11 +98,11 @@ fn init_camera(world: &mut World, dimensions: &ScreenDimensions) {
     // Center the camera in the middle of the screen, and let it cover
     // the entire screen
     let mut transform = Transform::default();
-    transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.5, 1.);
+    transform.set_translation_xyz(ARENA_WIDTH * 0.5, ARENA_HEIGHT * 0.5, 1.);
 
     world
         .create_entity()
-        .with(Camera::standard_2d(dimensions.width(), dimensions.height()))
+        .with(Camera::standard_2d(ARENA_WIDTH, ARENA_HEIGHT))
         .with(transform)
         .build();
 }
@@ -78,7 +115,7 @@ fn load_sprites(world: &mut World) -> Vec<SpriteRender> {
         let loader = world.read_resource::<Loader>();
         let texture_storage = world.read_resource::<AssetStorage<Texture>>();
         loader.load(
-            "sprites/logo.png",
+            "sprites/general.png",
             ImageFormat::default(),
             (),
             &texture_storage,
@@ -91,7 +128,7 @@ fn load_sprites(world: &mut World) -> Vec<SpriteRender> {
         let loader = world.read_resource::<Loader>();
         let sheet_storage = world.read_resource::<AssetStorage<SpriteSheet>>();
         loader.load(
-            "sprites/logo.ron",
+            "sprites/general.ron",
             SpriteSheetFormat(texture_handle),
             (),
             &sheet_storage,
@@ -109,21 +146,55 @@ fn load_sprites(world: &mut World) -> Vec<SpriteRender> {
         .collect()
 }
 
-fn init_sprites(world: &mut World, sprites: &[SpriteRender], dimensions: &ScreenDimensions) {
-    for (i, sprite) in sprites.iter().enumerate() {
-        // Center our sprites around the center of the window
-        let x = (i as f32 - 1.) * 100. + dimensions.width() * 0.5;
-        let y = (i as f32 - 1.) * 100. + dimensions.height() * 0.5;
-        let mut transform = Transform::default();
-        transform.set_translation_xyz(x, y, 0.);
+fn init_sprites(world: &mut World, map: &[[Tile; 10]; 10], sprites: &[SpriteRender], dimensions: &ScreenDimensions) {
+    for (i, row) in map.iter().enumerate() {
+        for (j, col) in row.iter().enumerate() {
+            let x = (i as f32) * (ARENA_WIDTH / 10.) + 8.;
+            let y = (j as f32) * (ARENA_HEIGHT / 10.) + 8.;
+            let mut transform = Transform::default();
+            transform.set_translation_xyz(x, y, 0.);
 
-        // Create an entity for each sprite and attach the `SpriteRender` as
-        // well as the transform. If you want to add behaviour to your sprites,
-        // you'll want to add a custom `Component` that will identify them, and a
-        // `System` that will iterate over them. See https://book.amethyst.rs/stable/concepts/system.html
+            let sprite = match col.status {
+                TileStatus::WALL => sprites[0].clone(),
+                TileStatus::FREE => sprites[1].clone(),
+                _ => {
+                    println!("not yet implemented status {:?}", col.status);
+                    sprites[1].clone()
+                }
+            };
+
+            // Create an entity for each sprite and attach the `SpriteRender` as
+            // well as the transform. If you want to add behaviour to your sprites,
+            // you'll want to add a custom `Component` that will identify them, and a
+            // `System` that will iterate over them. See https://book.amethyst.rs/stable/concepts/system.html
+            world
+                .create_entity()
+                .with(sprite)
+                .with(transform)
+                .build();
+        }
+    }
+}
+
+fn init_players(world: &mut World, sprites: &[SpriteRender]) {
+    for i in 0..4 {
+        let x = if i % 2 == 0 {
+            8.
+        } else {
+            ARENA_WIDTH - 8.
+        };
+        let y = if i < 2 {
+            8.
+        } else {
+            ARENA_HEIGHT - 8.
+        };
+        let mut transform = Transform::default();
+        transform.set_translation_xyz(x, y, 0.1);
+
         world
             .create_entity()
-            .with(sprite.clone())
+            .with(sprites[2].clone())
+            .with(Player)
             .with(transform)
             .build();
     }

@@ -15,7 +15,10 @@ use crate::config::read_map;
 pub const ARENA_HEIGHT: f32 = 160.0;
 pub const ARENA_WIDTH: f32 = 160.0;
 
-#[derive(Clone, Copy, Debug)]
+pub const PLAYER_WIDTH: f32 = 16.0;
+pub const PLAYER_HEIGHT: f32 = 16.0;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TileStatus {
     FREE,
     DESTROYED,
@@ -25,22 +28,45 @@ pub enum TileStatus {
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
     pub status: TileStatus,
+    pub coordinates: [usize; 2],
 }
 
-pub struct Player;
+impl Component for Tile {
+    type Storage = DenseVecStorage<Self>;
+}
+
+pub struct Player {
+    pub is_human: bool,
+}
 
 impl Component for Player {
     type Storage = DenseVecStorage<Self>;
 }
 
-pub struct MyState {
-    map: [[Tile; 10]; 10],
+pub struct Map {
+    tiles: [[Tile; 10]; 10],
 }
 
-impl Default for MyState {
+impl Component for Map {
+    type Storage = DenseVecStorage<Self>;
+}
+
+impl Map {
+    pub fn get_tile(&self, x: f32, y: f32) -> Tile {
+        let grid_x = (x / (ARENA_WIDTH / 10.)).floor() as usize;
+        let grid_y = (y / (ARENA_HEIGHT / 10.)).floor() as usize;
+        self.tiles[grid_x][grid_y]
+    }
+}
+
+pub struct MyState {
+    // map: [[Tile; 10]; 10],
+}
+
+impl Default for Map {
     fn default() -> Self {
-        MyState {
-            map: [[Tile { status: TileStatus::FREE }; 10]; 10],
+        Map {
+            tiles: [[Tile { status: TileStatus::FREE, coordinates: [0, 0] }; 10]; 10],
         }
     }
 }
@@ -52,7 +78,9 @@ impl SimpleState for MyState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        self.map = read_map("resources/maps/default.txt").unwrap();
+        // self.map = read_map("resources/maps/default.txt").unwrap();
+        let tiles = read_map("resources/maps/default.txt").unwrap();
+        world.insert(Map { tiles });
 
         // Get the screen dimensions so we can initialize the camera and
         // place our sprites correctly later. We'll clone this since we'll
@@ -64,7 +92,7 @@ impl SimpleState for MyState {
 
         // Load our sprites and display them
         let sprites = load_sprites(world);
-        init_sprites(world, &self.map, &sprites, &dimensions);
+        init_sprites(world, &tiles, &sprites, &dimensions);
         init_players(world, &sprites);
     }
 
@@ -191,10 +219,16 @@ fn init_players(world: &mut World, sprites: &[SpriteRender]) {
         let mut transform = Transform::default();
         transform.set_translation_xyz(x, y, 0.1);
 
+        let is_human = if i == 0 {
+            true
+        } else {
+            false
+        };
+
         world
             .create_entity()
             .with(sprites[2].clone())
-            .with(Player)
+            .with(Player { is_human })
             .with(transform)
             .build();
     }

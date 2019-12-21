@@ -12,6 +12,7 @@ use amethyst::{
 
 mod state;
 mod config;
+mod systems;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -29,6 +30,7 @@ fn main() -> amethyst::Result<()> {
     let game_data = GameDataBuilder::default()
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
+        .with(systems::MovementSystem, "movement_system", &["input_system"])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
                 .with_plugin(
@@ -38,7 +40,7 @@ fn main() -> amethyst::Result<()> {
                 .with_plugin(RenderFlat2D::default()),
         )?;
 
-    let mut game = Application::new(resources, state::MyState::default(), game_data)?;
+    let mut game = Application::new(resources, state::MyState {}, game_data)?;
     game.run();
 
     Ok(())

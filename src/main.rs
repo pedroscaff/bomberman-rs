@@ -1,5 +1,6 @@
 use amethyst::{
     core::transform::TransformBundle,
+    input::{InputBundle, StringBindings},
     prelude::*,
     renderer::{
         plugins::{RenderFlat2D, RenderToWindow},
@@ -7,11 +8,10 @@ use amethyst::{
         RenderingBundle,
     },
     utils::application_root_dir,
-    input::{InputBundle, StringBindings},
 };
 
-mod state;
 mod config;
+mod state;
 mod systems;
 
 fn main() -> amethyst::Result<()> {
@@ -24,13 +24,17 @@ fn main() -> amethyst::Result<()> {
 
     let binding_path = app_root.join("config").join("bindings.ron");
 
-    let input_bundle = InputBundle::<StringBindings>::new()
-        .with_bindings_from_file(binding_path)?;
+    let input_bundle =
+        InputBundle::<StringBindings>::new().with_bindings_from_file(binding_path)?;
 
     let game_data = GameDataBuilder::default()
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
-        .with(systems::MovementSystem, "movement_system", &["input_system"])
+        .with(
+            systems::MovementSystem,
+            "movement_system",
+            &["input_system"],
+        )
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
                 .with_plugin(

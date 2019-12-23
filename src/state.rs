@@ -1,9 +1,9 @@
 use amethyst::{
     assets::{AssetStorage, Loader},
     core::transform::Transform,
+    ecs::prelude::{Component, DenseVecStorage},
     input::{get_key, is_close_requested, is_key_down, VirtualKeyCode},
     prelude::*,
-    ecs::prelude::{Component, DenseVecStorage},
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
     window::ScreenDimensions,
 };
@@ -59,17 +59,18 @@ impl Map {
     }
 }
 
-pub struct MyState {
-    // map: [[Tile; 10]; 10],
-}
-
 impl Default for Map {
     fn default() -> Self {
         Map {
-            tiles: [[Tile { status: TileStatus::FREE, coordinates: [0, 0] }; 10]; 10],
+            tiles: [[Tile {
+                status: TileStatus::FREE,
+                coordinates: [0, 0],
+            }; 10]; 10],
         }
     }
 }
+
+pub struct MyState;
 
 impl SimpleState for MyState {
     // On start will run when this state is initialized. For more
@@ -78,7 +79,6 @@ impl SimpleState for MyState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        // self.map = read_map("resources/maps/default.txt").unwrap();
         let tiles = read_map("resources/maps/default.txt").unwrap();
         world.insert(Map { tiles });
 
@@ -174,7 +174,12 @@ fn load_sprites(world: &mut World) -> Vec<SpriteRender> {
         .collect()
 }
 
-fn init_sprites(world: &mut World, map: &[[Tile; 10]; 10], sprites: &[SpriteRender], dimensions: &ScreenDimensions) {
+fn init_sprites(
+    world: &mut World,
+    map: &[[Tile; 10]; 10],
+    sprites: &[SpriteRender],
+    dimensions: &ScreenDimensions,
+) {
     for (i, row) in map.iter().enumerate() {
         for (j, col) in row.iter().enumerate() {
             let x = (i as f32) * (ARENA_WIDTH / 10.) + 8.;
@@ -195,35 +200,19 @@ fn init_sprites(world: &mut World, map: &[[Tile; 10]; 10], sprites: &[SpriteRend
             // well as the transform. If you want to add behaviour to your sprites,
             // you'll want to add a custom `Component` that will identify them, and a
             // `System` that will iterate over them. See https://book.amethyst.rs/stable/concepts/system.html
-            world
-                .create_entity()
-                .with(sprite)
-                .with(transform)
-                .build();
+            world.create_entity().with(sprite).with(transform).build();
         }
     }
 }
 
 fn init_players(world: &mut World, sprites: &[SpriteRender]) {
     for i in 0..4 {
-        let x = if i % 2 == 0 {
-            8.
-        } else {
-            ARENA_WIDTH - 8.
-        };
-        let y = if i < 2 {
-            8.
-        } else {
-            ARENA_HEIGHT - 8.
-        };
+        let x = if i % 2 == 0 { 8. } else { ARENA_WIDTH - 8. };
+        let y = if i < 2 { 8. } else { ARENA_HEIGHT - 8. };
         let mut transform = Transform::default();
         transform.set_translation_xyz(x, y, 0.1);
 
-        let is_human = if i == 0 {
-            true
-        } else {
-            false
-        };
+        let is_human = if i == 0 { true } else { false };
 
         world
             .create_entity()

@@ -1,20 +1,39 @@
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 
-use crate::state::{Tile, TileStatus};
+use crate::state::{Tile, TileStatus, MapTiles};
 
-pub fn read_map(filepath: &str) -> io::Result<[[Tile; 10]; 10]> {
+pub fn read_map(filepath: &str) -> io::Result<MapTiles> {
     let file = File::open(filepath)?;
     let reader = BufReader::new(file);
 
-    let mut map: [[Tile; 10]; 10] = [[Tile { status: TileStatus::FREE, coordinates: [0, 0] }; 10]; 10];
-    for (i, line) in reader.lines().enumerate() {
+    let mut map: MapTiles = [[Tile {
+        status: TileStatus::FREE,
+        coordinates: [0, 0],
+    }; 11]; 13];
+    for (j, line) in reader.lines().enumerate() {
         let line = line.unwrap();
-        for (j, c) in line.chars().enumerate() {
+        for (i, c) in line.chars().enumerate() {
             match c {
-                '-' => map[i][j] = Tile { status: TileStatus::FREE, coordinates: [i, j] },
-                '#' => map[i][j] = Tile { status: TileStatus::WALL, coordinates: [i, j] },
-                _ => panic!("unknown symbol {}", c)
+                '-' => {
+                    map[i][j] = Tile {
+                        status: TileStatus::FREE,
+                        coordinates: [i, j],
+                    }
+                }
+                '#' => {
+                    map[i][j] = Tile {
+                        status: TileStatus::PERMANENT_WALL,
+                        coordinates: [i, j],
+                    }
+                }
+                '0' => {
+                    map[i][j] = Tile {
+                        status: TileStatus::WALL,
+                        coordinates: [i, j],
+                    }
+                }
+                _ => panic!("unknown symbol {}", c),
             }
         }
     }

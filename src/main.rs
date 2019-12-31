@@ -11,6 +11,7 @@ use amethyst::{
 };
 
 mod config;
+mod entities;
 mod state;
 mod systems;
 
@@ -35,6 +36,8 @@ fn main() -> amethyst::Result<()> {
             "movement_system",
             &["input_system"],
         )
+        .with(systems::ActionsSystem, "actions_system", &["input_system"])
+        .with(systems::ExplosionSystem, "explosion_system", &[])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
                 .with_plugin(

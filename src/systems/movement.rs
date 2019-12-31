@@ -4,11 +4,24 @@ use amethyst::ecs::{Join, Read, ReadStorage, System, SystemData, World, WriteSto
 use amethyst::input::{InputHandler, StringBindings};
 
 use crate::state::{
-    Map, Player, TileStatus, ARENA_HEIGHT, ARENA_WIDTH, PLAYER_HEIGHT, PLAYER_WIDTH,
+    Map, TileStatus, ARENA_HEIGHT, ARENA_WIDTH, TILE_COUNT_HORIZONTAL, TILE_COUNT_VERTICAL,
+    TILE_HEIGHT,
+};
+
+use crate::entities::player::{
+    Player, PLAYER_HEIGHT, PLAYER_HEIGHT_HALF, PLAYER_WIDTH, PLAYER_WIDTH_HALF,
 };
 
 #[derive(SystemDesc)]
 pub struct MovementSystem;
+
+fn clamp_to_arena_vertical_boundaries(value: f32) -> f32 {
+    value.min(ARENA_HEIGHT - PLAYER_HEIGHT_HALF).max(PLAYER_HEIGHT_HALF)
+}
+
+fn clamp_to_arena_horizontal_boundaries(value: f32) -> f32 {
+    value.min(ARENA_WIDTH - PLAYER_WIDTH_HALF).max(PLAYER_WIDTH_HALF)
+}
 
 impl<'s> System<'s> for MovementSystem {
     type SystemData = (
@@ -30,17 +43,45 @@ impl<'s> System<'s> for MovementSystem {
                     let scaled_amount = 1.2 * mv_amount as f32;
                     let player_x = transform.translation().x;
                     let player_y = transform.translation().y;
-                    let grid_y = (player_y / (ARENA_HEIGHT / 10.));
-                    if grid_y - grid_y.floor() > 0.5 {
-                        return;
-                    }
                     let target_tile =
-                        map.get_tile(player_x + scaled_amount + PLAYER_WIDTH * 0.5, player_y);
+                        map.get_tile(player_x + scaled_amount + PLAYER_WIDTH_HALF, player_y);
+                    let target_tile = {
+                        if scaled_amount > 0.0 {
+                            let x = clamp_to_arena_horizontal_boundaries(player_x + scaled_amount + PLAYER_WIDTH_HALF);
+                            let target_tile_top_right = map.get_tile(
+                                x, clamp_to_arena_vertical_boundaries(player_y + PLAYER_HEIGHT_HALF)
+                            );
+                            let target_tile_top_left = map.get_tile(
+                                x, clamp_to_arena_vertical_boundaries(player_y - PLAYER_HEIGHT_HALF)
+                            );
+                            if (target_tile_top_left.status != TileStatus::FREE
+                                || target_tile_top_right.status != TileStatus::FREE)
+                                && target_tile_top_right != target_tile_top_left
+                            {
+                                return;
+                            }
+                            target_tile_top_right
+                        } else {
+                            let x = clamp_to_arena_horizontal_boundaries(player_x + scaled_amount - PLAYER_WIDTH_HALF);
+                            let target_tile_bottom_right = map.get_tile(
+                                x, clamp_to_arena_vertical_boundaries(player_y + PLAYER_HEIGHT_HALF)
+                            );
+                            let target_tile_bottom_left = map.get_tile(
+                                x, clamp_to_arena_vertical_boundaries(player_y - PLAYER_HEIGHT_HALF)
+                            );
+                            if (target_tile_bottom_left.status != TileStatus::FREE
+                                || target_tile_bottom_right.status != TileStatus::FREE)
+                                && target_tile_bottom_right != target_tile_bottom_left
+                            {
+                                return;
+                            }
+                            target_tile_bottom_right
+                        }
+                    };
+
                     if target_tile.status == TileStatus::FREE {
                         transform.set_translation_x(
-                            (player_x + scaled_amount)
-                                .min(ARENA_WIDTH - PLAYER_WIDTH * 0.5)
-                                .max(PLAYER_WIDTH * 0.5),
+                            clamp_to_arena_horizontal_boundaries(player_x + scaled_amount)
                         );
                     }
                 }
@@ -50,17 +91,43 @@ impl<'s> System<'s> for MovementSystem {
                     let scaled_amount = 1.2 * mv_amount as f32;
                     let player_x = transform.translation().x;
                     let player_y = transform.translation().y;
-                    let grid_x = (player_x / (ARENA_WIDTH / 10.));
-                    if grid_x - grid_x.floor() > 0.5 {
-                        return;
-                    }
-                    let target_tile =
-                        map.get_tile(player_x, player_y + scaled_amount + PLAYER_HEIGHT * 0.5);
+                    let target_tile = {
+                        if scaled_amount > 0.0 {
+                            let y = clamp_to_arena_vertical_boundaries(player_y + scaled_amount + PLAYER_HEIGHT_HALF);
+                            let target_tile_top_right = map.get_tile(
+                                clamp_to_arena_horizontal_boundaries(player_x + PLAYER_WIDTH_HALF), y
+                            );
+                            let target_tile_top_left = map.get_tile(
+                                clamp_to_arena_horizontal_boundaries(player_x - PLAYER_WIDTH_HALF), y
+                            );
+                            if (target_tile_top_left.status != TileStatus::FREE
+                                || target_tile_top_right.status != TileStatus::FREE)
+                                && target_tile_top_right != target_tile_top_left
+                            {
+                                return;
+                            }
+                            target_tile_top_right
+                        } else {
+                            let y = clamp_to_arena_vertical_boundaries(player_y + scaled_amount - PLAYER_HEIGHT_HALF);
+                            let target_tile_bottom_right = map.get_tile(
+                                clamp_to_arena_horizontal_boundaries(player_x + PLAYER_WIDTH_HALF), y
+                            );
+                            let target_tile_bottom_left = map.get_tile(
+                                clamp_to_arena_horizontal_boundaries(player_x - PLAYER_WIDTH_HALF), y
+                            );
+                            if (target_tile_bottom_left.status != TileStatus::FREE
+                                || target_tile_bottom_right.status != TileStatus::FREE)
+                                && target_tile_bottom_right != target_tile_bottom_left
+                            {
+                                return;
+                            }
+                            target_tile_bottom_right
+                        }
+                    };
+
                     if target_tile.status == TileStatus::FREE {
                         transform.set_translation_y(
-                            (player_y + scaled_amount)
-                                .min(ARENA_HEIGHT - PLAYER_HEIGHT * 0.5)
-                                .max(PLAYER_HEIGHT * 0.5),
+                            clamp_to_arena_vertical_boundaries(player_y + scaled_amount)
                         );
                     }
                 }

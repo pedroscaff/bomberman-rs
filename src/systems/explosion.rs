@@ -119,7 +119,7 @@ impl<'s> System<'s> for ExplosionSystem {
                                         );
                                     }
                                 }
-                                _ => {}
+                                TileStatus::PermanentWall => break,
                             };
                         }
                         collision_polygon

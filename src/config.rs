@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 
-use crate::state::{Tile, TileStatus, MapTiles};
+use crate::state::{MapTiles, Tile, TileStatus};
 
 pub fn read_map(filepath: &str) -> io::Result<MapTiles> {
     let file = File::open(filepath)?;

@@ -1,10 +1,10 @@
-use amethyst::renderer::SpriteRender;
+use amethyst::core::math::Vector3;
 use amethyst::core::transform::Transform;
 use amethyst::ecs::prelude::{Component, DenseVecStorage};
 use amethyst::prelude::*;
-use amethyst::core::math::Vector3;
+use amethyst::renderer::SpriteRender;
 
-use crate::state::{ARENA_WIDTH, ARENA_HEIGHT};
+use crate::state::{ARENA_HEIGHT, ARENA_WIDTH};
 
 pub const PLAYER_WIDTH: f32 = 12.0;
 pub const PLAYER_HEIGHT: f32 = 12.0;
@@ -15,6 +15,7 @@ pub const PLAYER_HEIGHT_HALF: f32 = PLAYER_HEIGHT / 2.0;
 pub struct Player {
     pub is_human: bool,
     pub number: u8,
+    pub num_bombs: u8,
 }
 
 impl Component for Player {
@@ -45,6 +46,7 @@ pub fn init_players(world: &mut World, sprites: &[SpriteRender]) {
             .with(Player {
                 is_human,
                 number: i,
+                num_bombs: 1,
             })
             .with(transform)
             .build();

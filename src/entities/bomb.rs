@@ -1,22 +1,33 @@
-use amethyst::renderer::SpriteRender;
+use amethyst::core::math::Vector3;
 use amethyst::core::transform::Transform;
 use amethyst::ecs::prelude::{Component, DenseVecStorage};
 use amethyst::ecs::{Entities, LazyUpdate};
-use amethyst::core::math::Vector3;
+use amethyst::renderer::SpriteRender;
 
+use crate::state::{
+    AssetType, Map, SpriteSheetList, ARENA_HEIGHT, ARENA_WIDTH, TILE_COUNT_HORIZONTAL,
+    TILE_COUNT_VERTICAL, TILE_HEIGHT_HALF, TILE_WIDTH_HALF,
+};
 use std::time::Instant;
-use crate::state::{ARENA_WIDTH, ARENA_HEIGHT, TILE_COUNT_HORIZONTAL, TILE_COUNT_VERTICAL, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, Map, AssetType, SpriteSheetList};
 
 pub struct Bomb {
     pub created_time: Instant,
     pub power: u8,
+    pub player_number: u8,
 }
 
 impl Component for Bomb {
     type Storage = DenseVecStorage<Self>;
 }
 
-pub fn spawn_bomb(entities: &Entities, transform: &Transform, lazy_update: &LazyUpdate, sprite_sheet_list: &SpriteSheetList, map: &Map) {
+pub fn spawn_bomb(
+    entities: &Entities,
+    transform: &Transform,
+    lazy_update: &LazyUpdate,
+    sprite_sheet_list: &SpriteSheetList,
+    map: &Map,
+    player_number: u8,
+) {
     let bomb_entity = entities.create();
     let mut bomb_transform = Transform::default();
     let tile = map.get_tile(transform.translation().x, transform.translation().y);
@@ -36,6 +47,7 @@ pub fn spawn_bomb(entities: &Entities, transform: &Transform, lazy_update: &Lazy
         Bomb {
             created_time: Instant::now(),
             power: 1,
+            player_number,
         },
     );
     lazy_update.insert(bomb_entity, bomb_transform);

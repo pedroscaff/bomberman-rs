@@ -14,7 +14,7 @@ use crate::state::{
 
 use crate::entities::bomb::Bomb;
 use crate::entities::player::{
-    Player, PLAYER_HEIGHT, PLAYER_HEIGHT_HALF, PLAYER_WIDTH, PLAYER_WIDTH_HALF,
+    Player, PLAYER_HEIGHT_HALF, PLAYER_WIDTH_HALF,
 };
 
 #[derive(SystemDesc)]
@@ -100,8 +100,8 @@ impl<'s> System<'s> for ExplosionSystem {
                         }
                         let next_tile = map.get_tile_by_key(x as usize, y as usize);
                         match next_tile.status {
-                            TileStatus::WALL => {
-                                map.update_tile(x as usize, y as usize, TileStatus::FREE);
+                            TileStatus::Wall => {
+                                map.update_tile(x as usize, y as usize, TileStatus::Free);
                                 let new_tile_entity = entities.create();
                                 let mut new_tile_transform = Transform::default();
                                 new_tile_transform.set_translation_xyz(
@@ -121,12 +121,12 @@ impl<'s> System<'s> for ExplosionSystem {
                                 lazy_update.insert(new_tile_entity, sprite_render);
                                 lazy_update.insert(new_tile_entity, new_tile_transform);
                             }
-                            // TileStatus::FREE => check_collisions
+                            // TileStatus::Free => check_collisions
                             _ => {}
                         };
                     }
                 }
-                entities.delete(entity);
+                entities.delete(entity).unwrap();
 
                 // check_collisions((bomb_transform.translation().x, bomb_transform.translation().y), bomb.power, player_bboxes, &mut map);
             }

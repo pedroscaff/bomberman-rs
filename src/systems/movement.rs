@@ -4,12 +4,11 @@ use amethyst::ecs::{Join, Read, ReadStorage, System, SystemData, World, WriteSto
 use amethyst::input::{InputHandler, StringBindings};
 
 use crate::state::{
-    Map, TileStatus, ARENA_HEIGHT, ARENA_WIDTH, TILE_COUNT_HORIZONTAL, TILE_COUNT_VERTICAL,
-    TILE_HEIGHT,
+    Map, TileStatus, ARENA_HEIGHT, ARENA_WIDTH,
 };
 
 use crate::entities::player::{
-    Player, PLAYER_HEIGHT, PLAYER_HEIGHT_HALF, PLAYER_WIDTH, PLAYER_WIDTH_HALF,
+    Player, PLAYER_HEIGHT_HALF, PLAYER_WIDTH_HALF,
 };
 
 #[derive(SystemDesc)]
@@ -43,8 +42,6 @@ impl<'s> System<'s> for MovementSystem {
                     let scaled_amount = 1.2 * mv_amount as f32;
                     let player_x = transform.translation().x;
                     let player_y = transform.translation().y;
-                    let target_tile =
-                        map.get_tile(player_x + scaled_amount + PLAYER_WIDTH_HALF, player_y);
                     let target_tile = {
                         if scaled_amount > 0.0 {
                             let x = clamp_to_arena_horizontal_boundaries(player_x + scaled_amount + PLAYER_WIDTH_HALF);
@@ -54,8 +51,8 @@ impl<'s> System<'s> for MovementSystem {
                             let target_tile_top_left = map.get_tile(
                                 x, clamp_to_arena_vertical_boundaries(player_y - PLAYER_HEIGHT_HALF)
                             );
-                            if (target_tile_top_left.status != TileStatus::FREE
-                                || target_tile_top_right.status != TileStatus::FREE)
+                            if (target_tile_top_left.status != TileStatus::Free
+                                || target_tile_top_right.status != TileStatus::Free)
                                 && target_tile_top_right != target_tile_top_left
                             {
                                 return;
@@ -69,8 +66,8 @@ impl<'s> System<'s> for MovementSystem {
                             let target_tile_bottom_left = map.get_tile(
                                 x, clamp_to_arena_vertical_boundaries(player_y - PLAYER_HEIGHT_HALF)
                             );
-                            if (target_tile_bottom_left.status != TileStatus::FREE
-                                || target_tile_bottom_right.status != TileStatus::FREE)
+                            if (target_tile_bottom_left.status != TileStatus::Free
+                                || target_tile_bottom_right.status != TileStatus::Free)
                                 && target_tile_bottom_right != target_tile_bottom_left
                             {
                                 return;
@@ -79,7 +76,7 @@ impl<'s> System<'s> for MovementSystem {
                         }
                     };
 
-                    if target_tile.status == TileStatus::FREE {
+                    if target_tile.status == TileStatus::Free {
                         transform.set_translation_x(
                             clamp_to_arena_horizontal_boundaries(player_x + scaled_amount)
                         );
@@ -100,8 +97,8 @@ impl<'s> System<'s> for MovementSystem {
                             let target_tile_top_left = map.get_tile(
                                 clamp_to_arena_horizontal_boundaries(player_x - PLAYER_WIDTH_HALF), y
                             );
-                            if (target_tile_top_left.status != TileStatus::FREE
-                                || target_tile_top_right.status != TileStatus::FREE)
+                            if (target_tile_top_left.status != TileStatus::Free
+                                || target_tile_top_right.status != TileStatus::Free)
                                 && target_tile_top_right != target_tile_top_left
                             {
                                 return;
@@ -115,8 +112,8 @@ impl<'s> System<'s> for MovementSystem {
                             let target_tile_bottom_left = map.get_tile(
                                 clamp_to_arena_horizontal_boundaries(player_x - PLAYER_WIDTH_HALF), y
                             );
-                            if (target_tile_bottom_left.status != TileStatus::FREE
-                                || target_tile_bottom_right.status != TileStatus::FREE)
+                            if (target_tile_bottom_left.status != TileStatus::Free
+                                || target_tile_bottom_right.status != TileStatus::Free)
                                 && target_tile_bottom_right != target_tile_bottom_left
                             {
                                 return;
@@ -125,7 +122,7 @@ impl<'s> System<'s> for MovementSystem {
                         }
                     };
 
-                    if target_tile.status == TileStatus::FREE {
+                    if target_tile.status == TileStatus::Free {
                         transform.set_translation_y(
                             clamp_to_arena_vertical_boundaries(player_y + scaled_amount)
                         );

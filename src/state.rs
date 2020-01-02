@@ -34,9 +34,9 @@ pub type MapTiles = [[Tile; 11]; 13];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TileStatus {
-    FREE,
-    WALL,
-    PERMANENT_WALL,
+    Free,
+    Wall,
+    PermanentWall,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -97,7 +97,7 @@ impl Default for Map {
     fn default() -> Self {
         Map {
             tiles: [[Tile {
-                status: TileStatus::FREE,
+                status: TileStatus::Free,
                 coordinates: [0, 0],
             }; 11]; 13],
         }
@@ -232,9 +232,9 @@ fn init_sprites_map(
             transform.set_translation_xyz(x, y, 0.);
 
             let sprite = match col.status {
-                TileStatus::WALL => sprites[4].clone(),
-                TileStatus::FREE => sprites[1].clone(),
-                TileStatus::PERMANENT_WALL => sprites[0].clone(),
+                TileStatus::Wall => sprites[4].clone(),
+                TileStatus::Free => sprites[1].clone(),
+                TileStatus::PermanentWall => sprites[0].clone(),
             };
 
             // Create an entity for each sprite and attach the `SpriteRender` as

@@ -52,6 +52,7 @@ impl Component for Tile {
 #[derive(Copy, Clone, Eq, Hash, PartialEq)]
 pub enum AssetType {
     Bomb,
+    Explosion,
 }
 
 #[derive(Default)]
@@ -198,13 +199,24 @@ fn load_sprites(world: &mut World) -> SpriteSheetList {
         let sheet_storage = world.read_resource::<AssetStorage<SpriteSheet>>();
         loader.load(
             "sprites/general.ron",
-            SpriteSheetFormat(texture_handle),
+            SpriteSheetFormat(texture_handle.clone()),
+            (),
+            &sheet_storage,
+        )
+    };
+    let sheet_handle_explosion = {
+        let loader = world.read_resource::<Loader>();
+        let sheet_storage = world.read_resource::<AssetStorage<SpriteSheet>>();
+        loader.load(
+            "sprites/explosion.ron",
+            SpriteSheetFormat(texture_handle.clone()),
             (),
             &sheet_storage,
         )
     };
     let mut sprite_sheet_list = SpriteSheetList::default();
     sprite_sheet_list.insert(AssetType::Bomb, sheet_handle);
+    sprite_sheet_list.insert(AssetType::Explosion, sheet_handle_explosion);
     sprite_sheet_list
 
     // Create our sprite renders. Each will have a handle to the texture

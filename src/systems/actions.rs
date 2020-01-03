@@ -5,6 +5,8 @@ use amethyst::ecs::{
 };
 use amethyst::input::{InputHandler, StringBindings};
 
+use log::info;
+
 use crate::state::{Map, SpriteSheetList};
 
 use crate::entities::bomb::spawn_bomb;
@@ -35,7 +37,7 @@ impl<'s> System<'s> for ActionsSystem {
                     return;
                 }
                 player.num_bombs -= 1;
-                println!("spawning, {}", player.num_bombs);
+                info!("spawning, {}", player.num_bombs);
                 spawn_bomb(
                     &entities,
                     &transform,

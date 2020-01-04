@@ -21,7 +21,9 @@ use crate::entities::bomb::Bomb;
 use crate::entities::explosion::{create_explosion, Explosion};
 use crate::entities::player::{Player, PLAYER_HEIGHT_HALF, PLAYER_WIDTH_HALF};
 
-const THREE_SECS: Duration = Duration::from_secs(3); const ONE_SEC: Duration = Duration::from_secs(1); 
+const THREE_SECS: Duration = Duration::from_secs(3);
+const EXPLOSION_DURATION: Duration = Duration::from_millis(500);
+
 #[derive(SystemDesc)]
 pub struct ExplosionSystem;
 
@@ -39,12 +41,19 @@ impl<'s> System<'s> for ExplosionSystem {
 
     fn run(
         &mut self,
-        (entities, lazy_update, transforms, mut players, sprite_sheet_list, mut map, mut bombs, mut explosions): Self::SystemData,
+        (
+            entities,
+            lazy_update,
+            transforms,
+            mut players,
+            sprite_sheet_list,
+            mut map,
+            mut bombs,
+            mut explosions,
+        ): Self::SystemData,
     ) {
         for (entity, explosion) in (&*entities, &mut explosions).join() {
-            for (entity, player, transform) in
-                (&*entities, &mut players, &transforms).join()
-            {
+            for (entity, player, transform) in (&*entities, &mut players, &transforms).join() {
                 let bbox = AABB::new(
                     Point::new(
                         transform.translation().x - PLAYER_WIDTH_HALF,
@@ -61,7 +70,7 @@ impl<'s> System<'s> for ExplosionSystem {
                     info!("player {} dead", player.number);
                 }
             }
-            if explosion.created_time.elapsed() >= ONE_SEC {
+            if explosion.created_time.elapsed() >= EXPLOSION_DURATION {
                 entities.delete(entity).unwrap();
             }
         }
@@ -88,8 +97,7 @@ impl<'s> System<'s> for ExplosionSystem {
                 let mut collision_polygons: Vec<AABB<f32>> = Vec::with_capacity(4);
                 for i in 0..4 {
                     // check all four directions
-                    let mut collision_polygon =
-                        AABB::new(initial_coordinates.0, initial_coordinates.1);
+                    let mut collision_polygon;
                     for j in 1..(bomb.power + 1) {
                         let j = j as i32;
                         let (x, y) = match i {
@@ -150,11 +158,15 @@ impl<'s> System<'s> for ExplosionSystem {
                             TileStatus::PermanentWall => break,
                         }
                         collision_polygons.push(collision_polygon);
-                    };
-                    create_explosion(&entities, &lazy_update, &sprite_sheet_list, &collision_polygons);
-                    for (entity, player, transform) in
-                        (&*entities, &mut players, &transforms).join()
-                    {
+                    }
+                    create_explosion(
+                        &entities,
+                        &lazy_update,
+                        &sprite_sheet_list,
+                        &collision_polygons,
+                        &AABB::new(initial_coordinates.0, initial_coordinates.1),
+                    );
+                    for player in (&mut players).join() {
                         if player.number == bomb.player_number {
                             player.num_bombs = 1;
                         }

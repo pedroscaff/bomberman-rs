@@ -13,8 +13,9 @@ use log::info;
 use std::time::Duration;
 
 use crate::state::{
-    AssetType, Map, SpriteSheetList, TileStatus, ARENA_HEIGHT, ARENA_WIDTH, TILE_COUNT_HORIZONTAL,
-    TILE_COUNT_VERTICAL, TILE_HEIGHT, TILE_HEIGHT_HALF, TILE_WIDTH, TILE_WIDTH_HALF,
+    AssetType, GameTimeController, Map, SpriteSheetList, TileStatus, ARENA_HEIGHT, ARENA_WIDTH,
+    TILE_COUNT_HORIZONTAL, TILE_COUNT_VERTICAL, TILE_HEIGHT, TILE_HEIGHT_HALF, TILE_WIDTH,
+    TILE_WIDTH_HALF,
 };
 
 use crate::entities::bomb::Bomb;
@@ -37,6 +38,7 @@ impl<'s> System<'s> for ExplosionSystem {
         Write<'s, Map>,
         WriteStorage<'s, Bomb>,
         WriteStorage<'s, Explosion>,
+        Read<'s, GameTimeController>,
     );
 
     fn run(
@@ -50,6 +52,7 @@ impl<'s> System<'s> for ExplosionSystem {
             mut map,
             mut bombs,
             mut explosions,
+            game_time_controller,
         ): Self::SystemData,
     ) {
         for (entity, explosion) in (&*entities, &mut explosions).join() {
@@ -70,12 +73,25 @@ impl<'s> System<'s> for ExplosionSystem {
                     info!("player {} dead", player.number);
                 }
             }
-            if explosion.created_time.elapsed() >= EXPLOSION_DURATION {
-                entities.delete(entity).unwrap();
+            let duration = game_time_controller
+                .stopwatch
+                .elapsed()
+                .checked_sub(explosion.created_time);
+            if let Some(d) = duration {
+                if d >= EXPLOSION_DURATION {
+                    entities.delete(entity).unwrap();
+                }
             }
         }
         for (entity, bomb, bomb_transform) in (&*entities, &mut bombs, &transforms).join() {
-            if bomb.created_time.elapsed() >= THREE_SECS {
+            let duration = game_time_controller
+                .stopwatch
+                .elapsed()
+                .checked_sub(bomb.created_time);
+            if let Some(d) = duration {
+                if d < THREE_SECS {
+                    continue;
+                }
                 entities.delete(entity).unwrap();
                 let bomb_tile = map.get_tile(
                     bomb_transform.translation().x,
@@ -165,6 +181,7 @@ impl<'s> System<'s> for ExplosionSystem {
                         &sprite_sheet_list,
                         &collision_polygons,
                         &AABB::new(initial_coordinates.0, initial_coordinates.1),
+                        &game_time_controller.stopwatch,
                     );
                     for player in (&mut players).join() {
                         if player.number == bomb.player_number {

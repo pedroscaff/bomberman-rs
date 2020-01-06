@@ -1,4 +1,5 @@
 use amethyst::core::math::Vector3;
+use amethyst::core::timing::Stopwatch;
 use amethyst::core::transform::Transform;
 use amethyst::ecs::prelude::{Component, DenseVecStorage};
 use amethyst::ecs::{Entities, LazyUpdate};
@@ -8,10 +9,10 @@ use ncollide2d::bounding_volume::AABB;
 
 use crate::state::{AssetType, SpriteSheetList, TILE_HEIGHT, TILE_WIDTH};
 use std::f32::consts::PI;
-use std::time::Instant;
+use std::time::Duration;
 
 pub struct Explosion {
-    pub created_time: Instant,
+    pub created_time: Duration,
     pub collision_polygon: AABB<f32>,
 }
 
@@ -25,13 +26,14 @@ fn create_entity(
     lazy_update: &LazyUpdate,
     sprite_render: SpriteRender,
     bbox: &AABB<f32>,
+    gametime: &Stopwatch,
 ) {
     let entity = entities.create();
     lazy_update.insert(entity, sprite_render);
     lazy_update.insert(
         entity,
         Explosion {
-            created_time: Instant::now(),
+            created_time: gametime.elapsed(),
             collision_polygon: bbox.clone(),
         },
     );
@@ -44,6 +46,7 @@ pub fn create_explosion(
     sprite_sheet_list: &SpriteSheetList,
     bboxes: &Vec<AABB<f32>>,
     center_bbox: &AABB<f32>,
+    gametime: &Stopwatch,
 ) {
     for bbox in bboxes {
         let mut explosion_transform = Transform::default();
@@ -68,6 +71,7 @@ pub fn create_explosion(
             lazy_update,
             sprite_render,
             bbox,
+            gametime,
         );
     }
     {
@@ -84,6 +88,7 @@ pub fn create_explosion(
             lazy_update,
             sprite_render,
             center_bbox,
+            gametime,
         );
     }
 }

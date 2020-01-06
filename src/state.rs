@@ -1,5 +1,6 @@
 use amethyst::{
     assets::{AssetStorage, Loader},
+    core::timing::Stopwatch,
     core::transform::Transform,
     ecs::prelude::{Component, DenseVecStorage},
     input::{get_key, is_close_requested, is_key_down, VirtualKeyCode},
@@ -14,6 +15,7 @@ use amethyst::{
 use log::info;
 
 use std::collections::HashMap;
+use std::time::Duration;
 
 use crate::config::read_map;
 use crate::entities::player;
@@ -118,6 +120,12 @@ impl Default for CurrentState {
     }
 }
 
+#[derive(Default)]
+pub struct GameTimeController {
+    pub stopwatch: Stopwatch,
+    pub max_time: Duration,
+}
+
 pub struct GameplayState;
 pub struct PausedState;
 pub struct ResultsState;
@@ -188,9 +196,25 @@ impl SimpleState for GameplayState {
         init_sprites_map(world, &tiles, &sprites, &dimensions);
         player::init_players(world, &sprites);
         world.insert(sprite_sheet_list);
+
+        let mut stopwatch = Stopwatch::new();
+        stopwatch.start();
+        world.insert(GameTimeController {
+            stopwatch: stopwatch.clone(),
+            max_time: Duration::new(180, 0),
+        });
+    }
+
+    fn on_pause(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        let game_time_controller = &mut *data.world.write_resource::<GameTimeController>();
+        game_time_controller.stopwatch.stop();
+        info!("on_pause {:?}", game_time_controller.stopwatch.elapsed());
     }
 
     fn on_resume(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        let game_time_controller = &mut *data.world.write_resource::<GameTimeController>();
+        info!("on_resume {:?}", game_time_controller.stopwatch.elapsed());
+        game_time_controller.stopwatch.start();
         *data.world.write_resource::<CurrentState>() = CurrentState::Running;
     }
 

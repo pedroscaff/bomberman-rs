@@ -1,4 +1,5 @@
 use amethyst::core::math::Vector3;
+use amethyst::core::timing::Stopwatch;
 use amethyst::core::transform::Transform;
 use amethyst::ecs::prelude::{Component, DenseVecStorage};
 use amethyst::ecs::{Entities, LazyUpdate};
@@ -8,10 +9,10 @@ use crate::state::{
     AssetType, Map, SpriteSheetList, ARENA_HEIGHT, ARENA_WIDTH, TILE_COUNT_HORIZONTAL,
     TILE_COUNT_VERTICAL, TILE_HEIGHT_HALF, TILE_WIDTH_HALF,
 };
-use std::time::Instant;
+use std::time::Duration;
 
 pub struct Bomb {
-    pub created_time: Instant,
+    pub created_time: Duration,
     pub power: u8,
     pub player_number: u8,
 }
@@ -26,6 +27,7 @@ pub fn spawn_bomb(
     lazy_update: &LazyUpdate,
     sprite_sheet_list: &SpriteSheetList,
     map: &Map,
+    gametime: &Stopwatch,
     player_number: u8,
 ) {
     let bomb_entity = entities.create();
@@ -45,7 +47,7 @@ pub fn spawn_bomb(
     lazy_update.insert(
         bomb_entity,
         Bomb {
-            created_time: Instant::now(),
+            created_time: gametime.elapsed(),
             power: 1,
             player_number,
         },

@@ -7,7 +7,7 @@ use amethyst::input::{InputHandler, StringBindings};
 
 use log::info;
 
-use crate::state::{Map, SpriteSheetList};
+use crate::state::{GameTimeController, Map, SpriteSheetList};
 
 use crate::entities::bomb::spawn_bomb;
 use crate::entities::player::Player;
@@ -24,11 +24,21 @@ impl<'s> System<'s> for ActionsSystem {
         Read<'s, SpriteSheetList>,
         Read<'s, Map>,
         Read<'s, InputHandler<StringBindings>>,
+        Read<'s, GameTimeController>,
     );
 
     fn run(
         &mut self,
-        (entities, lazy_update, transforms, mut players, sprite_sheet_list, map, input): Self::SystemData,
+        (
+            entities,
+            lazy_update,
+            transforms,
+            mut players,
+            sprite_sheet_list,
+            map,
+            input,
+            game_time_controller,
+        ): Self::SystemData,
     ) {
         let fire_input = input.action_is_down("fire").unwrap();
         if fire_input {
@@ -44,6 +54,7 @@ impl<'s> System<'s> for ActionsSystem {
                     &lazy_update,
                     &sprite_sheet_list,
                     &map,
+                    &game_time_controller.stopwatch,
                     player.number,
                 );
             }

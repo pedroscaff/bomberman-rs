@@ -105,13 +105,65 @@ impl Default for Map {
     }
 }
 
-pub struct MyState;
+#[derive(PartialEq)]
+pub enum CurrentState {
+    Running,
+    Paused,
+    Results,
+}
 
-impl SimpleState for MyState {
+impl Default for CurrentState {
+    fn default() -> Self {
+        CurrentState::Paused
+    }
+}
+
+pub struct GameplayState;
+pub struct PausedState;
+pub struct ResultsState;
+
+impl SimpleState for ResultsState {
+    fn handle_event(
+        &mut self,
+        data: StateData<'_, GameData<'_, '_>>,
+        event: StateEvent,
+    ) -> SimpleTrans {
+        if let StateEvent::Window(event) = &event {
+            if is_key_down(&event, VirtualKeyCode::Return) {
+                *data.world.write_resource::<CurrentState>() = CurrentState::Results;
+                return Trans::Pop;
+            }
+        }
+
+        Trans::None
+    }
+}
+
+impl SimpleState for PausedState {
+    fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        *data.world.write_resource::<CurrentState>() = CurrentState::Paused;
+    }
+    fn handle_event(
+        &mut self,
+        _data: StateData<'_, GameData<'_, '_>>,
+        event: StateEvent,
+    ) -> SimpleTrans {
+        if let StateEvent::Window(event) = &event {
+            if is_key_down(&event, VirtualKeyCode::P) {
+                return Trans::Pop;
+            }
+        }
+
+        Trans::None
+    }
+}
+
+impl SimpleState for GameplayState {
     // On start will run when this state is initialized. For more
     // state lifecycle hooks, see:
     // https://book.amethyst.rs/stable/concepts/state.html#life-cycle
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        *data.world.write_resource::<CurrentState>() = CurrentState::Running;
         let world = data.world;
 
         let tiles = read_map("resources/maps/default.txt").unwrap();
@@ -138,15 +190,24 @@ impl SimpleState for MyState {
         world.insert(sprite_sheet_list);
     }
 
+    fn on_resume(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        *data.world.write_resource::<CurrentState>() = CurrentState::Running;
+    }
+
     fn handle_event(
         &mut self,
-        mut _data: StateData<'_, GameData<'_, '_>>,
+        _data: StateData<'_, GameData<'_, '_>>,
         event: StateEvent,
     ) -> SimpleTrans {
         if let StateEvent::Window(event) = &event {
             // Check if the window should be closed
             if is_close_requested(&event) || is_key_down(&event, VirtualKeyCode::Escape) {
                 return Trans::Quit;
+            }
+
+            if is_key_down(&event, VirtualKeyCode::P) {
+                // Pause the game by going to the `PausedState`.
+                return Trans::Push(Box::new(PausedState));
             }
 
             // Listen to any key events

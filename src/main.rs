@@ -32,12 +32,20 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
         .with(
-            systems::MovementSystem,
+            systems::MovementSystem.pausable(state::CurrentState::Running),
             "movement_system",
             &["input_system"],
         )
-        .with(systems::ActionsSystem, "actions_system", &["input_system"])
-        .with(systems::ExplosionSystem, "explosion_system", &[])
+        .with(
+            systems::ActionsSystem.pausable(state::CurrentState::Running),
+            "actions_system",
+            &["input_system"],
+        )
+        .with(
+            systems::ExplosionSystem.pausable(state::CurrentState::Running),
+            "explosion_system",
+            &[],
+        )
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
                 .with_plugin(
@@ -47,7 +55,7 @@ fn main() -> amethyst::Result<()> {
                 .with_plugin(RenderFlat2D::default()),
         )?;
 
-    let mut game = Application::new(resources, state::MyState {}, game_data)?;
+    let mut game = Application::new(resources, state::GameplayState {}, game_data)?;
     game.run();
 
     Ok(())
